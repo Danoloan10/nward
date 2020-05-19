@@ -1,0 +1,25 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.8	//
+CFLAGS	Makefile	/^CFLAGS  = -g$/;"	m
+LDFLAGS	Makefile	/^LDFLAGS = -lpcap$/;"	m
+NW_FILTER_XMAS	nward.h	19;"	d
+NW_MODE_XMAS	nward.h	/^typedef enum { NW_MODE_XMAS } nward_mode_t;$/;"	e	enum:__anon1
+NW_SNAPLEN	nward.c	8;"	d	file:
+N_MODES	nward.h	5;"	d
+callback	nward.h	/^	pcap_handler callback;$/;"	m	struct:mode_opt
+filter	nward.h	/^	char *filter;$/;"	m	struct:mode_opt
+init_pcap	nward.c	/^static pcap_t *init_pcap(char *devname)$/;"	f	file:
+list_devs	nward.c	/^static void list_devs ()$/;"	f	file:
+main	nward.c	/^int main(int argc, char **argv)$/;"	f
+mode_opt	nward.h	/^struct mode_opt {$/;"	s
+modes	nward.h	/^struct mode_opt modes[] = {$/;"	v	typeref:struct:mode_opt
+nward_echo_handler	nward.c	/^void nward_echo_handler (u_char *user, const struct pcap_pkthdr *h, const u_char *bytes)$/;"	f
+nward_mdef_t	nward.h	/^typedef void (*nward_mdef_t) (pcap_t *, int pc);$/;"	t
+nward_mode_t	nward.h	/^typedef enum { NW_MODE_XMAS } nward_mode_t;$/;"	t	typeref:enum:__anon1
+opt	nward.h	/^	char opt;$/;"	m	struct:mode_opt
+print_usage	nward.c	/^static void print_usage()$/;"	f	file:
+run_mode	nward.c	/^static void run_mode(pcap_t *pcap, int pc, struct mode_opt *mode)$/;"	f	file:

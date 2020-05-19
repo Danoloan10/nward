@@ -3,37 +3,29 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-
-#define NW_FILTER_XMAS "tcp[tcpflags] & (tcp-fin | tcp-push | tcp-urg) = (tcp-fin | tcp-push | tcp-urg)"
-#define NW_FILTER_XMAS "tcp[tcpflags] & (tcp-fin | tcp-push | tcp-urg) = (tcp-fin | tcp-push | tcp-urg)"
+#include <string.h>
 
 #define NW_SNAPLEN 256
 
-#define NW_SYN  0
-#define NW_CONN 1
-#define NW_UDP  2
-#define NW_FIN  3
-#define NW_NULL 4
-#define NW_XMAS 5
-#define NW_IDLE 6
-#define NW_CUST 7
+#include "nward.h"
 
-#define NW_MAX_MODES 8
-
-void nward_echo_handler (u_char *user, const struct pcap_pkthdr *h, const u_char *bytes) {
+void nward_echo_handler (u_char *user, const struct pcap_pkthdr *h, const u_char *bytes)
+{
 	// TODO
 	printf("pakcet detected: %s\n", user);
 }
 
-void run_xmas(pcap_t *pcap, int pc) {
+static void run_mode(pcap_t *pcap, int pc, struct mode_opt *mode)
+{
 	struct bpf_program fp;
-	pcap_compile(pcap, &fp, NW_FILTER_XMAS, 1, PCAP_NETMAS_UNKNOWN); //TODO error
+	pcap_compile(pcap, &fp, mode->filter, 1, PCAP_NETMASK_UNKNOWN); //TODO error
 	pcap_setfilter(pcap, &fp); // TODO error
-	pcap_loop(pcap, pc, nward_echo_handler, "xmas"); // TODO error
+	pcap_loop(pcap, pc, mode->callback, mode->name); // TODO error
 	pcap_freecode(&fp);
 }
 
-static pcap_t *init_pcap(char *devname) {
+static pcap_t *init_pcap(char *devname)
+{
 	int warn;
 	pcap_t *pcap = NULL;
 	char errbuf[PCAP_ERRBUF_SIZE];
@@ -48,7 +40,7 @@ static pcap_t *init_pcap(char *devname) {
 			else
 				fprintf(stderr, "device %s not found\n", devname);
 		} else while (it != NULL && dev == NULL) {
-			if (!strcmp(devname, it->name))
+			if (devname == NULL || !strcmp(devname, it->name))
 				dev = it;
 			it = it->next;
 		}
@@ -83,7 +75,8 @@ static pcap_t *init_pcap(char *devname) {
 	return pcap;
 }
 
-static void list_devs () {
+static void list_devs ()
+{
 	char errbuf[PCAP_ERRBUF_SIZE];
 	pcap_if_t *list;
 	if (!pcap_findalldevs(&list, errbuf)) {
@@ -100,7 +93,8 @@ static void list_devs () {
 	}
 }
 
-static void print_usage() {
+static void print_usage()
+{
 	fprintf(stderr, "usage"); //TODO
 }
 
@@ -109,37 +103,50 @@ static void print_usage() {
 // -sX Xmas
 // -c count
 // -s "filter"
-int main(int argc, char **argv) {
+int main(int argc, char **argv)
+{
 	int err = 0, pc = 0, opt;
-	char *dev;
+	char *devname = NULL;
 
-	int modes[NW_MAX_MODES] = { 0, 0, 0, 0, 0, 0, 0 };
-	
 	pcap_t *pcap;
+	nward_mode_t mode = NULL;
+
+	char optstr[N_MODES+2] = { 0 };
+	for (int i = 0; i < N_MODES; i++) {
+		optstr[i] = modes[i].opt;
+	}
+	optstr[N_MODES] = 'l';
 	
-	while ((opt = getopt(argc, argv, "ls:"))) {
-		switch (opt) {
-			case 's':
-				if (optarg[0] == 'X') modes[NW_XMAS] = 1;
-				break;
-			case 'l':
-				list_devs();
-				exit(0);
-				break;
-			case '?':
-				print_usage();
-				exit(1);
-				break;
+	while (mode == NULL && (opt = getopt(argc, argv, optstr)) >= 0) {
+		for (int i = 0; i < N_MODES; i++) {
+			if (modes[i].opt == opt) {
+				mode = &modes[i];
+			}
+		}
+		if (mode == NULL) {
+			switch (opt) {
+				case 'l':
+					list_devs();
+					exit(0);
+					break;
+				default:
+					print_usage();
+					exit(1);
+					break;
+			}
 		}
 	}
 
-	pcap = init_pcap();
-	if (pcap != NULL) {
-		if (modes[NW_XMAS]) run_xmas(pcap, pc, netmask);
-		err = 0;
+	if (mode != NULL) {
+		pcap = init_pcap(devname);
+		if (pcap != NULL) {
+			run_mode(pcap, pc, mode);
+			err = 0;
+		} else {
+			err = 1;
+		}
 	} else {
-		fprintf(stderr, "%s\n", errbuf);
-		err = 1;
+		print_usage();
 	}
 
 	return err;
