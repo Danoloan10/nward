@@ -9,19 +9,48 @@
 
 #include "nward.h"
 
-void nward_echo_handler (u_char *user, const struct pcap_pkthdr *h, const u_char *bytes)
-{
-	// TODO
-	printf("pakcet detected: %s\n", user);
-}
-
 static void run_mode(pcap_t *pcap, int pc, struct mode_opt *mode)
 {
 	struct bpf_program fp;
-	pcap_compile(pcap, &fp, mode->filter, 1, PCAP_NETMASK_UNKNOWN); //TODO error
-	pcap_setfilter(pcap, &fp); // TODO error
-	pcap_loop(pcap, pc, mode->callback, mode->name); // TODO error
-	pcap_freecode(&fp);
+	if (pcap_compile(pcap, &fp, mode->filter, 1, PCAP_NETMASK_UNKNOWN)) {
+		pcap_perror(pcap, "compile");
+	} else {
+		int linktype, linkhdrlen;
+		if ((linktype = pcap_datalink(pcap)) < 0)
+		{
+			pcap_perror(pcap, "run_mode");
+		} else {
+			switch (linktype)
+			{
+				case DLT_NULL:
+					linkhdrlen = 4;
+					break;
+
+				case DLT_EN10MB:
+					linkhdrlen = 14;
+					break;
+				case DLT_LINUX_SLL:
+					linkhdrlen = 16;
+					break;
+				case DLT_SLIP:
+				case DLT_PPP:
+					linkhdrlen = 24;
+					break;
+
+				default:
+					fprintf(stderr, "Unsupported datalink (%d)\n", linktype);
+					return;
+			}
+			if (pcap_setfilter(pcap, &fp))
+				pcap_perror(pcap, "compile");
+			else {
+				struct nward_hand_args args = { mode->name, linkhdrlen };
+				if (pcap_loop(pcap, pc, mode->callback, (u_char *) &args)) // TODO sólo devuelve 0 si no hay break
+					pcap_perror(pcap, "compile");
+			}
+		}
+		pcap_freecode(&fp);
+	}
 }
 
 static pcap_t *init_pcap(char *devname)
@@ -55,10 +84,12 @@ static pcap_t *init_pcap(char *devname)
 			switch (warn = pcap_activate(pcap)) {
 				case 0: //OK
 					break;
-				//TODO añadir otros warns
+					//TODO añadir otros warns
 				default:
 					// activate faiu
-					pcap_perror(pcap, "");
+					pcap_perror(pcap, "init_pcap");
+					pcap_close(pcap);
+					pcap = NULL;
 			}
 		} else {
 			// create fail
@@ -111,12 +142,11 @@ int main(int argc, char **argv)
 	pcap_t *pcap;
 	nward_mode_t mode = NULL;
 
-	char optstr[N_MODES+2] = { 0 };
+	char optstr[N_MODES+4] = "lD:";
 	for (int i = 0; i < N_MODES; i++) {
-		optstr[i] = modes[i].opt;
+		optstr[i+3] = modes[i].opt;
 	}
-	optstr[N_MODES] = 'l';
-	
+
 	while (mode == NULL && (opt = getopt(argc, argv, optstr)) >= 0) {
 		for (int i = 0; i < N_MODES; i++) {
 			if (modes[i].opt == opt) {
@@ -125,6 +155,10 @@ int main(int argc, char **argv)
 		}
 		if (mode == NULL) {
 			switch (opt) {
+				case 'D':
+					if (devname == NULL)
+						devname = strdup(optarg);
+					break;
 				case 'l':
 					list_devs();
 					exit(0);
@@ -148,6 +182,9 @@ int main(int argc, char **argv)
 	} else {
 		print_usage();
 	}
+
+	if (devname != NULL)
+		free(devname);
 
 	return err;
 }
