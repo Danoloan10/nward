@@ -39,6 +39,7 @@ struct tcp_con {
 	u_short dst_port;
 	u_short src_port;
 	int replied;
+	int finned;
 };
 
 struct synned_list {
@@ -119,6 +120,15 @@ static void remove_synned (struct synned_list *list, const struct tcp_con *pcon)
 	pthread_mutex_unlock(&list->lock);
 }
 
+/**
+ * ACK scan si:
+ * 	- se escucha un RST en una conexión TCP para la que la máquina que envía el RST
+ * 		no ha enviado ningún ACK.
+ * 	- Las conexiones se dan por establecidas cuando se esucha un ACK en ellas.
+ * 	- Las conexiones terminan si se escuchan dos FIN seguidos o si se esucucha un RST
+ * 	- Algunas implementaciones de TCP pueden esperar FIN después de un RST.
+ * 		Este comportamiento se trata como escaneo.
+ */
 void nward_ack_handler  (u_char *user, const struct pcap_pkthdr *h, const u_char *bytes)
 {
 	//TODO
@@ -138,7 +148,8 @@ ip_ver: 4,
 			src_addr: { ipv4: iphead.saddr },
 			dst_port: dst_port,
 			src_port: src_port,
-			replied:  0
+			replied:  0,
+			finned: 0
 		};
 		if (TCPACK(tcphead.flags)) {
 			int i, ret = match_synned(&synned, &tcpcon, &i);
@@ -155,15 +166,76 @@ ip_ver: 4,
 		} 
 		if (TCPRST(tcphead.flags) || TCPFIN(tcphead.flags)) {
 			int i, ret = match_synned(&synned, &tcpcon, &i);
-			pthread_mutex_lock(&synned.lock);
-			if (ret < 0 && !(synned.synned[i].replied) && TCPRST(tcphead.flags)) {
-				printf("ACK scan detected: from %d.%d.%d.%d:%d to %d.%d.%d.%d:%d\n",
+			if (ret) {
+				pthread_mutex_lock(&synned.lock);
+				struct tcp_con found = synned.synned[i];
+				pthread_mutex_unlock(&synned.lock);
+
+				if (ret < 0 && !(found.replied) && TCPRST(tcphead.flags)) {
+					printf("ACK scan detected: from %d.%d.%d.%d:%d to %d.%d.%d.%d:%d\n",
+							iphead.daddr.bytes[0], iphead.daddr.bytes[1], iphead.daddr.bytes[2], iphead.daddr.bytes[3], dst_port,
+							iphead.saddr.bytes[0], iphead.saddr.bytes[1], iphead.saddr.bytes[2], iphead.saddr.bytes[3], src_port
+						  );
+				}
+
+				// TODO
+				// eliminar si:
+				// 	- FIN handshake completado
+				// 	- FIN, RST, FIN, RST es válido (ver imagen)
+				remove_synned(&synned, &tcpcon);
+			}
+		}
+	}
+}
+
+void nward_syn_handler  (u_char *user, const struct pcap_pkthdr *h, const u_char *bytes)
+{
+	static struct synned_list synned = { NULL, 0, 0, PTHREAD_MUTEX_INITIALIZER };
+
+	struct nward_hand_args args = *((struct nward_hand_args *) user);
+	struct ipv4_head iphead = *((struct ipv4_head *) (bytes + args.lhdr_len));
+
+	if (iphead.proto == 6) {
+		struct tcp_head tcphead = *((struct tcp_head *) (bytes + args.lhdr_len + IPV4HDRLEN(&iphead)));
+		u_short src_port = ntohs(tcphead.src_port);
+		u_short dst_port = ntohs(tcphead.dst_port);
+		struct tcp_con tcpcon = (struct tcp_con) {
+ip_ver: 4,
+			dst_addr: { ipv4: iphead.daddr },
+			src_addr: { ipv4: iphead.saddr },
+			dst_port: dst_port,
+			src_port: src_port,
+			replied:  0,
+			finned: 0
+		};
+		int i, ret = match_synned(&synned, &tcpcon, &i);
+		if (ret == 0) {
+			if (TCPSYN(tcphead.flags)) {
+				if (add_synned(&synned, &tcpcon)) {
+					fprintf(stderr, "add_synned(): error\n");
+					return;
+				}
+			}
+		} else if (ret > 0) {
+			if (TCPRST(tcphead.flags)) {
+				printf("SYN scan detected: from %d.%d.%d.%d:%d to %d.%d.%d.%d:%d\n",
 						iphead.daddr.bytes[0], iphead.daddr.bytes[1], iphead.daddr.bytes[2], iphead.daddr.bytes[3], dst_port,
 						iphead.saddr.bytes[0], iphead.saddr.bytes[1], iphead.saddr.bytes[2], iphead.saddr.bytes[3], src_port
 					  );
+				printf("\t|=> Notified: port open\n");
+				remove_synned(&synned, &tcpcon);
+			} else if (TCPACK(tcphead.flags)) {
+				remove_synned(&synned, &tcpcon);
 			}
-			pthread_mutex_unlock(&synned.lock);
-			remove_synned(&synned, &tcpcon);
+		} else if (ret < 0) {
+			if (TCPRST(tcphead.flags)) {
+				printf("SYN scan detected: from %d.%d.%d.%d:%d to %d.%d.%d.%d:%d;\n",
+						iphead.daddr.bytes[0], iphead.daddr.bytes[1], iphead.daddr.bytes[2], iphead.daddr.bytes[3], dst_port,
+						iphead.saddr.bytes[0], iphead.saddr.bytes[1], iphead.saddr.bytes[2], iphead.saddr.bytes[3], src_port
+					  );
+				printf("\t|=> Notified: port closed\n");
+				remove_synned(&synned, &tcpcon);
+			}
 		}
 	}
 }
