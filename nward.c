@@ -20,27 +20,10 @@ static void run_mode(pcap_t *pcap, int pc, struct mode_opt *mode)
 		{
 			pcap_perror(pcap, "run_mode");
 		} else {
-			switch (linktype)
-			{
-				case DLT_NULL:
-					linkhdrlen = 4;
-					break;
-
-				case DLT_EN10MB:
-					linkhdrlen = 14;
-					break;
-				case DLT_LINUX_SLL:
-					linkhdrlen = 16;
-					break;
-				case DLT_SLIP:
-				case DLT_PPP:
-					linkhdrlen = 24;
-					break;
-
-				default:
-					fprintf(stderr, "Unsupported datalink (%d)\n", linktype);
-					return;
-			}
+			// TODO semánticamente aquí no
+			if ((linkhdrlen = ltype_to_lhdrlen(linktype)) < 0)
+				fprintf(stderr, "Unsupported datalink (%d)\n", linktype);
+			else
 			if (pcap_setfilter(pcap, &fp))
 				pcap_perror(pcap, "compile");
 			else {
@@ -53,7 +36,7 @@ static void run_mode(pcap_t *pcap, int pc, struct mode_opt *mode)
 	}
 }
 
-static pcap_t *init_pcap(char *devname)
+static pcap_t *init_pcap(char *devname, struct mode_opt *mode)
 {
 	int warn;
 	pcap_t *pcap = NULL;
@@ -80,6 +63,9 @@ static pcap_t *init_pcap(char *devname)
 			pcap_set_buffer_size(pcap, BUFSIZ);
 			pcap_set_snaplen(pcap, NW_SNAPLEN);
 			pcap_set_timeout(pcap, 1);
+
+			// mode config
+			mode->config(pcap);
 
 			switch (warn = pcap_activate(pcap)) {
 				case 0: //OK
@@ -172,7 +158,7 @@ int main(int argc, char **argv)
 	}
 
 	if (mode != NULL) {
-		pcap = init_pcap(devname);
+		pcap = init_pcap(devname, mode);
 		if (pcap != NULL) {
 			run_mode(pcap, pc, mode);
 			err = 0;

@@ -1,5 +1,5 @@
-LDFLAGS = -lpcap
-CFLAGS  = -g
+LDFLAGS = -Lhashset -lpcap -lhset
+CFLAGS  = -g -Ihashset
 
 nward: nward.o handler.o
 	$(CC) -o $@ $^ $(LDFLAGS) $(CFLAGS)

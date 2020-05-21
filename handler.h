@@ -6,6 +6,9 @@ struct nward_hand_args {
 	int lhdr_len;
 };
 
+void nward_config_incoming (pcap_t *pcap);
+void nward_config_both (pcap_t *pcap);
+
 void nward_ack_handler (u_char *user, const struct pcap_pkthdr *h, const u_char *bytes);
 void nward_echo_handler (u_char *user, const struct pcap_pkthdr *h, const u_char *bytes);
 #endif /* HANDLER_H */

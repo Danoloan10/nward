@@ -6,6 +6,12 @@
 #include "ipv4_head.h"
 
 #define IPVERSION(__ptr) (*((u_char *)__ptr) >> 4) & 0x0F
+#define IPV4HDRLEN(__ptr) ((int) (*((u_char *)__ptr) & (u_char) 0x0F) * 4)
+
+#define TCPSYN(__flags) ((u_char) __flags & (u_char) 0x02)
+#define TCPACK(__flags) ((u_char) __flags & (u_char) 0x10)
+#define TCPRST(__flags) ((u_char) __flags & (u_char) 0x04)
+#define TCPFIN(__flags) ((u_char) __flags & (u_char) 0x01)
 
 /* NOTE: uses u_* (pcap.h) instead of u*_t (stdint.h) */
 
@@ -40,6 +46,20 @@ struct ipv6_head_rout {
 /* IPv6 fragment */
 struct ipv6_head_frag {
 	u_char bytes[8];
+};
+
+/* TCP header */
+struct tcp_head {
+	u_short src_port;
+	u_short dst_port;
+	u_int seqno;
+	u_int ackno;
+	u_char doff_ns;
+	u_char flags;
+	u_short win_size;
+	u_short checksum;
+	u_short urg_ptr;
+	u_char opts_pad[40];
 };
 
 #endif /* HEADS_H */
