@@ -7,7 +7,7 @@ nward: nward.o handler.o
 nward.o: nward.c nward.h modes.h handler.h
 	$(CC) -c -o $@ $< $(LDFLAGS) $(CFLAGS)
 
-handler.o: handler.c modes.h head.h ipv4_head.h susp.h
+handler.o: handler.c modes.h head.h ipv4_head.h susp.h synned.h susp.h
 	$(CC) -c -o $@ $< $(LDFLAGS) $(CFLAGS)
 
 clean:

@@ -79,43 +79,57 @@ static void remove_susp (struct susp_list *list, const ipv4_addr addr) {
 
 struct args {
 	struct susp_list *list;
-	int seconds;
+	useconds_t usec;
 };
+
+static void tick_all (struct susp_list *list) {
+	pthread_mutex_lock(&list->lock);
+	for (int i = 0; i < list->size; i++) {
+		if (list->list[i].ticks > 0) {
+			list->list[i].ticks--;
+			/*
+			printf("%d.%d.%d.%d: s-valor %d (-1)\n",
+					list->list[i].addr.ipv4.bytes[0],
+					list->list[i].addr.ipv4.bytes[1],
+					list->list[i].addr.ipv4.bytes[2],
+					list->list[i].addr.ipv4.bytes[3],
+					list->list[i].ticks);
+			*/
+		}
+		if (list->list[i].ticks == 0) {
+			pthread_mutex_unlock(&list->lock);
+			remove_susp (list, list->list[i].addr.ipv4);
+			pthread_mutex_lock(&list->lock);
+		}
+	}
+	pthread_mutex_unlock(&list->lock);
+}
 
 void *tick_alrm_hand (void *pargs) {
 	struct args args = *((struct args *)pargs);
 	free(pargs);
 	while (1) {
 		struct susp_list *list = args.list;
-		pthread_mutex_lock(&list->lock);
-		for (int i = 0; i < list->size; i++) {
-			if (list->list[i].ticks > 0) {
-				list->list[i].ticks--;
-				/*
-				printf("%d.%d.%d.%d: s-valor %d (-1)\n",
-						list->list[i].addr.ipv4.bytes[0],
-						list->list[i].addr.ipv4.bytes[1],
-						list->list[i].addr.ipv4.bytes[2],
-						list->list[i].addr.ipv4.bytes[3],
-						list->list[i].ticks);
-				*/
-			}
-			if (list->list[i].ticks == 0) {
-				pthread_mutex_unlock(&list->lock);
-				remove_susp (list, list->list[i].addr.ipv4);
-				pthread_mutex_lock(&list->lock);
-			}
-		}
-		pthread_mutex_unlock(&list->lock);
-		sleep(args.seconds);
+		tick_all(list);
+		usleep(args.usec);
 	}
 	return NULL;
 }
 
-int start_tick_alrm (struct susp_list *list, int seconds) {
+void tick_offline (struct susp_list *list, struct timeval ts, useconds_t usec)
+{
+	static struct timeval last = { 0, 0 };
+	if ((ts.tv_sec - last.tv_sec)*1000000 + (ts.tv_usec - last.tv_usec) > usec) {
+		last = ts;
+		tick_all(list);
+	}
+}
+
+int start_live_ticker (struct susp_list *list, useconds_t usec)
+{
 	struct args *args = malloc(sizeof(struct args));
 	if (args != NULL) {
-		(*args) = (struct args) { list, seconds };
+		(*args) = (struct args) { list, usec };
 		pthread_t th;
 		pthread_attr_t attr;
 		pthread_attr_init(&attr);

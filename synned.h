@@ -67,12 +67,19 @@ static int add_synned (struct synned_list *list, const struct tcp_con *pcon)
 	pthread_mutex_lock(&list->lock);
 	if (list->synned == NULL) {
 		void *newsyn = calloc(16, sizeof(struct tcp_con));
+		list->s_cap = 16;
 		if (newsyn == NULL) ret = -1;
-		else list->synned = newsyn;
-	} else if (list->s_size == list->s_cap) {
-		void *newsyn = realloc(list->synned, list->s_cap + list->s_cap);
+		else {
+			list->synned = newsyn;
+			list->s_cap = 16;
+		}
+	} else if (list->s_size >= list->s_cap) {
+		void *newsyn = realloc(list->synned, sizeof(struct tcp_con) * list->s_cap * 2);
 		if (newsyn == NULL) ret = -1;
-		else list->synned = newsyn;
+		else {
+			list->synned = newsyn;
+			list->s_cap *= 2;
+		}
 	} 
 	if (!ret) {
 		list->synned[list->s_size] = *pcon;

@@ -5,7 +5,7 @@
 
 #include "ipv4_head.h"
 
-#define IPVERSION(__ptr) (*((u_char *)__ptr) >> 4) & 0x0F
+#define IPVERSION(__ptr) ((*((u_char *)__ptr) >> 4) & 0x0F)
 #define IPV4HDRLEN(__ptr) ((int) (*((u_char *)__ptr) & (u_char) 0x0F) * 4)
 
 #define TCPSYN(__flags) ((u_char) __flags & (u_char) 0x02)

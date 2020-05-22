@@ -10,7 +10,7 @@
 
 #include "nward.h"
 
-static void run_mode(pcap_t *pcap, int pc, int mt, int to, struct mode_opt *mode)
+static void run_mode(pcap_t *pcap, int pc, int mt, useconds_t to, int warn, int live, struct mode_opt *mode)
 {
 	struct bpf_program fp;
 	if (pcap_compile(pcap, &fp, mode->filter, 1, PCAP_NETMASK_UNKNOWN)) {
@@ -28,43 +28,27 @@ static void run_mode(pcap_t *pcap, int pc, int mt, int to, struct mode_opt *mode
 			if (pcap_setfilter(pcap, &fp))
 				pcap_perror(pcap, "compile");
 			else {
-				struct nward_hand_args args = { mode->name, linkhdrlen, mt, to };
+				struct nward_hand_args args = { mode->name, linkhdrlen, mt, to, warn, live };
 				if (pcap_loop(pcap, pc, mode->callback, (u_char *) &args)) // TODO sólo devuelve 0 si no hay break
 					pcap_perror(pcap, "compile");
 			}
 		}
-		pcap_freecode(&fp);
+		//pcap_freecode(&fp);
 	}
 }
 
 static pcap_t *init_pcap_file(char *filename, struct mode_opt *mode)
 {
-	int warn;
 	pcap_t *pcap = NULL;
 	char errbuf[PCAP_ERRBUF_SIZE];
 
-	if (pcap != NULL) {
-		pcap_set_buffer_size(pcap, BUFSIZ);
-		pcap_set_snaplen(pcap, NW_SNAPLEN);
-		pcap_set_timeout(pcap, 1);
+	pcap = pcap_open_offline(filename, errbuf);
 
-		// mode config
-		mode->config(pcap);
-
-		switch (warn = pcap_activate(pcap)) {
-			case 0: //OK
-				break;
-				//TODO añadir otros warns
-			default:
-				// activate faiu
-				pcap_perror(pcap, "init_pcap");
-				pcap_close(pcap);
-				pcap = NULL;
-		}
-	} else {
+	if (pcap == NULL) {
 		// create fail
 		fprintf(stderr, "%s\n", errbuf);
 	}
+
 	return pcap;
 }
 
@@ -144,7 +128,36 @@ static void list_devs ()
 
 static void print_usage()
 {
-	fprintf(stderr, "usage"); //TODO
+	fprintf(stderr, "\
+Usage:\n\
+	nward [options] -type\n\
+\n\
+All options and arguments following the type argument are ignored\n\
+\n\
+options:\n\
+	-c N - analyse up to N packets (0 or less for infinity, default: 0)\n\
+	-d «device»\n\
+	       perform live session capturing traffic from «device».\n\
+	       If not provided, chooses the first found. Incompatible with -f\n\
+	-f «file»\n\
+	       perform offline session reading the PCAP file «file». Incompatible with -d\n\
+	-l   - list devices available for live session and exit (discards all other options)\n\
+	-m M - tolerate up to M suspicious events (must be non-negative, default 10)\n\
+	-t T - a tick will last T milliseconds. Each tick a suspicious event is forgotten\n\
+	       for every source IP address. In offline sessions, ticks are triggered by\n\
+	       the packet reads and timeouts are based on the timestamps of the packets\n\
+	       (must be positive, default 100)\n\
+	-w   - print scan warnings when suspicious\n\
+types:\n\
+	-A - ward from ACK scans\n\
+	-F - ward from FIN scans\n\
+	-N - ward from NULL scans\n\
+	-S - ward from SYN scans\n\
+	-U - ward from UDP scans\n\
+	-X - ward from Xmas scans\n\
+Example:\n\
+	nward -f file.pcap -c 10 -m 10 -t 2000 -F\n\
+");
 }
 
 // options:
@@ -154,15 +167,16 @@ static void print_usage()
 // -s "filter"
 int main(int argc, char **argv)
 {
-	int err = 0, pc = 0, mt = 10, to = 1, file = 0, opt;
+	useconds_t to = 100000;
+	int err = 0, pc = 0, mt = 10, file = 0, warn = 0, opt;
 	char *devname = NULL;
 
 	pcap_t *pcap;
 	nward_mode_t mode = NULL;
 
-	char optstr[N_MODES+12] = "ld:m:c:t:f:";
+	char optstr[N_MODES+13] = "ld:m:c:t:f:w";
 	for (int i = 0; i < N_MODES; i++) {
-		optstr[i+3] = modes[i].opt;
+		optstr[i+12] = modes[i].opt;
 	}
 
 	while (mode == NULL && (opt = getopt(argc, argv, optstr)) >= 0) {
@@ -172,6 +186,9 @@ int main(int argc, char **argv)
 			}
 		}
 		switch (opt) {
+			case 'w':
+				warn = 1;
+				break;
 			case 'f':
 				if (devname == NULL) {
 					devname = strdup(optarg);
@@ -209,6 +226,8 @@ int main(int argc, char **argv)
 				if (errno == EINVAL || to <= 0) {
 					print_usage();
 					exit(1);
+				} else {
+					to *= 1000; // ms to us
 				}
 				break;
 			case 'l':
@@ -229,7 +248,7 @@ int main(int argc, char **argv)
 			pcap = init_pcap_live(devname, mode);
 		}
 		if (pcap != NULL) {
-			run_mode(pcap, pc, mt, to, mode);
+			run_mode(pcap, pc, mt, to, warn, !file, mode);
 			pcap_close(pcap);
 			err = 0;
 		} else {
