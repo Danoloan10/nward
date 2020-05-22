@@ -1,10 +1,22 @@
 #include "head.h"
 #include "handler.h"
+#include "synned.h"
+#include "susp.h"
 
 #include <stdio.h>
 #include <hashset.h>
 #include <string.h>
 #include <pthread.h>
+
+static void notify_attack (const char *msg, struct timeval ts, ipv4_addr attacker, ipv4_addr victim, int port) {
+	printf("[ %ld.%06ld ]", ts.tv_sec, ts.tv_usec);
+	printf("%s: from %d.%d.%d.%d to %d.%d.%d.%d (scanned port %d)\n",
+			msg,
+			attacker.bytes[0], attacker.bytes[1], attacker.bytes[2], attacker.bytes[3],
+			victim.bytes[0],   victim.bytes[1],   victim.bytes[2],   victim.bytes[3],
+			port
+		  );
+}
 
 void nward_config_incoming (pcap_t *pcap) {
 	pcap_setdirection(pcap, PCAP_D_IN);
@@ -26,100 +38,6 @@ void nward_echo_handler (u_char *user, const struct pcap_pkthdr *h, const u_char
 			iphead.saddr.bytes[3]);
 }
 
-struct tcp_con {
-	int ip_ver;
-	union {
-		ipv4_addr ipv4;
-		ipv6_addr ipv6;
-	} dst_addr;
-	union {
-		ipv4_addr ipv4;
-		ipv6_addr ipv6;
-	} src_addr;
-	u_short dst_port;
-	u_short src_port;
-	int replied;
-	int finned;
-};
-
-struct synned_list {
-	struct tcp_con *synned;
-	size_t s_size;
-	size_t s_cap;
-	pthread_mutex_t lock;
-};
-
-static int match_synned (struct synned_list *list, const struct tcp_con *pcon, int *pi)
-{
-	struct tcp_con con = *pcon;
-	struct tcp_con syn;
-	int ret = 0;
-
-	pthread_mutex_lock(&list->lock);
-	for (int i = 0; i < list->s_size; i++) {
-		syn = list->synned[i];
-		if (syn.ip_ver == con.ip_ver) {
-			if (syn.ip_ver == 4 &&
-				syn.dst_port == con.dst_port &&
-				syn.src_port == con.src_port &&
-				!memcmp(&syn.dst_addr, &con.dst_addr, sizeof(con.dst_addr.ipv4)) &&
-				!memcmp(&syn.src_addr, &con.src_addr, sizeof(con.src_addr.ipv4)))
-			{
-				*pi = i;
-				ret = 1;
-			} else {
-				if (syn.ip_ver == 4 &&
-					syn.src_port == con.dst_port &&
-					syn.dst_port == con.src_port &&
-					!memcmp(&syn.src_addr, &con.dst_addr, sizeof(con.dst_addr.ipv4)) &&
-					!memcmp(&syn.dst_addr, &con.src_addr, sizeof(con.src_addr.ipv4)))
-				{
-					*pi = i;
-					ret = -1;
-				}
-			}
-		}
-	}
-	pthread_mutex_unlock(&list->lock);
-	return ret;
-}
-static int add_synned (struct synned_list *list, const struct tcp_con *pcon)
-{
-	int ret = 0;
-	struct tcp_con con = *pcon;
-	pthread_mutex_lock(&list->lock);
-	if (list->synned == NULL) {
-		void *newsyn = calloc(16, sizeof(struct tcp_con));
-		if (newsyn == NULL) ret = -1;
-		else list->synned = newsyn;
-	} else if (list->s_size == list->s_cap) {
-		void *newsyn = realloc(list->synned, list->s_cap + list->s_cap);
-		if (newsyn == NULL) ret = -1;
-		else list->synned = newsyn;
-	} 
-	if (!ret) {
-		list->synned[list->s_size] = *pcon;
-		list->s_size++;
-	}
-	pthread_mutex_unlock(&list->lock);
-	return ret;
-}
-
-static void remove_synned (struct synned_list *list, const struct tcp_con *pcon) {
-	int i, ret = match_synned (list, pcon, &i);
-	pthread_mutex_lock(&list->lock);
-	if (ret && list->s_size > 0) {
-		if (i == 0 && list->s_size == 1) {
-			free (list->synned);
-			list->synned = NULL;
-		} else if (i < list->s_size-1) {
-			memmove (list->synned + i, list->synned + i+1, sizeof(*list->synned) * (list->s_size - i)); 
-		}
-		list->s_size--;
-	}
-	pthread_mutex_unlock(&list->lock);
-}
-
 /**
  * ACK scan si:
  * 	- se escucha un RST en una conexión TCP para la que la máquina que envía el RST
@@ -134,9 +52,16 @@ void nward_ack_handler  (u_char *user, const struct pcap_pkthdr *h, const u_char
 	//TODO
 
 	static struct synned_list synned = { NULL, 0, 0, PTHREAD_MUTEX_INITIALIZER };
+	static struct susp_list   susp   = { NULL, 0, 0, PTHREAD_MUTEX_INITIALIZER };
+	static int alrm_started = 0;
 
 	struct nward_hand_args args = *((struct nward_hand_args *) user);
 	struct ipv4_head iphead = *((struct ipv4_head *) (bytes + args.lhdr_len));
+
+	if (!alrm_started) {
+		while (start_tick_alrm(&susp, args.seconds));
+		alrm_started = 1;
+	}
 
 	if (iphead.proto == 6) {
 		struct tcp_head tcphead = *((struct tcp_head *) (bytes + args.lhdr_len + IPV4HDRLEN(&iphead)));
@@ -149,7 +74,7 @@ ip_ver: 4,
 			dst_port: dst_port,
 			src_port: src_port,
 			replied:  0,
-			finned: 0
+			finning:  0
 		};
 		if (TCPACK(tcphead.flags)) {
 			int i, ret = match_synned(&synned, &tcpcon, &i);
@@ -171,18 +96,36 @@ ip_ver: 4,
 				struct tcp_con found = synned.synned[i];
 				pthread_mutex_unlock(&synned.lock);
 
-				if (ret < 0 && !(found.replied) && TCPRST(tcphead.flags)) {
-					printf("ACK scan detected: from %d.%d.%d.%d:%d to %d.%d.%d.%d:%d\n",
-							iphead.daddr.bytes[0], iphead.daddr.bytes[1], iphead.daddr.bytes[2], iphead.daddr.bytes[3], dst_port,
-							iphead.saddr.bytes[0], iphead.saddr.bytes[1], iphead.saddr.bytes[2], iphead.saddr.bytes[3], src_port
-						  );
+				if (TCPRST(tcphead.flags)) {
+					if (ret < 0 && !(found.replied)){
+						if (tick_susp_tcp(&susp, tcpcon.dst_addr.ipv4, args.maxticks)) {
+							notify_attack("ACK scan",
+									h->ts,
+									tcpcon.dst_addr.ipv4,
+									tcpcon.src_addr.ipv4,
+									tcpcon.src_port);
+						}
+						/*
+						if (tick_susp_tcp(&susp, tcpcon.src_addr.ipv4, maxticks))
+							notify_attack("ACK scan", tcpcon.src_addr.ipv4, tcpcon.dst_addr.ipv4, tcpcon.dst_port);
+							*/
+					}
+					if (!(found.finning)) {
+						// si no está en la fase FIN, RST fuerza desconexión
+						remove_synned(&synned, &tcpcon);
+					}
+				} else { /* if (TCPFIN(tcphead.flags)) */
+					if (!(found.finning)) {
+						pthread_mutex_lock(&synned.lock);
+						synned.synned[i].finning = ret > 0 ? 1 : -1;
+						pthread_mutex_unlock(&synned.lock);
+					} else {
+						if ((ret > 0 && found.finning < 0) || (ret < 0 && found.finning > 0)) {
+							// eliminar cuando ambas partes hayan enviado FIN
+							remove_synned(&synned, &tcpcon);
+						}
+					}
 				}
-
-				// TODO
-				// eliminar si:
-				// 	- FIN handshake completado
-				// 	- FIN, RST, FIN, RST es válido (ver imagen)
-				remove_synned(&synned, &tcpcon);
 			}
 		}
 	}
@@ -191,9 +134,16 @@ ip_ver: 4,
 void nward_syn_handler  (u_char *user, const struct pcap_pkthdr *h, const u_char *bytes)
 {
 	static struct synned_list synned = { NULL, 0, 0, PTHREAD_MUTEX_INITIALIZER };
+	static struct susp_list   susp   = { NULL, 0, 0, PTHREAD_MUTEX_INITIALIZER };
+	static int alrm_started = 0;
 
 	struct nward_hand_args args = *((struct nward_hand_args *) user);
 	struct ipv4_head iphead = *((struct ipv4_head *) (bytes + args.lhdr_len));
+
+	if (!alrm_started) {
+		while (start_tick_alrm(&susp, args.seconds));
+		alrm_started = 1;
+	}
 
 	if (iphead.proto == 6) {
 		struct tcp_head tcphead = *((struct tcp_head *) (bytes + args.lhdr_len + IPV4HDRLEN(&iphead)));
@@ -204,9 +154,7 @@ ip_ver: 4,
 			dst_addr: { ipv4: iphead.daddr },
 			src_addr: { ipv4: iphead.saddr },
 			dst_port: dst_port,
-			src_port: src_port,
-			replied:  0,
-			finned: 0
+			src_port: src_port
 		};
 		int i, ret = match_synned(&synned, &tcpcon, &i);
 		if (ret == 0) {
@@ -218,22 +166,26 @@ ip_ver: 4,
 			}
 		} else if (ret > 0) {
 			if (TCPRST(tcphead.flags)) {
-				printf("SYN scan detected: from %d.%d.%d.%d:%d to %d.%d.%d.%d:%d\n",
-						iphead.daddr.bytes[0], iphead.daddr.bytes[1], iphead.daddr.bytes[2], iphead.daddr.bytes[3], dst_port,
-						iphead.saddr.bytes[0], iphead.saddr.bytes[1], iphead.saddr.bytes[2], iphead.saddr.bytes[3], src_port
-					  );
-				printf("\t|=> Notified: port open\n");
+				if (tick_susp_tcp(&susp, tcpcon.src_addr.ipv4, args.maxticks)) {
+					notify_attack("SYN scan, notified port open",
+							h->ts,
+							tcpcon.src_addr.ipv4,
+							tcpcon.dst_addr.ipv4,
+							tcpcon.dst_port);
+				}
 				remove_synned(&synned, &tcpcon);
 			} else if (TCPACK(tcphead.flags)) {
 				remove_synned(&synned, &tcpcon);
 			}
 		} else if (ret < 0) {
 			if (TCPRST(tcphead.flags)) {
-				printf("SYN scan detected: from %d.%d.%d.%d:%d to %d.%d.%d.%d:%d;\n",
-						iphead.daddr.bytes[0], iphead.daddr.bytes[1], iphead.daddr.bytes[2], iphead.daddr.bytes[3], dst_port,
-						iphead.saddr.bytes[0], iphead.saddr.bytes[1], iphead.saddr.bytes[2], iphead.saddr.bytes[3], src_port
-					  );
-				printf("\t|=> Notified: port closed\n");
+				if (tick_susp_tcp(&susp, tcpcon.dst_addr.ipv4, args.maxticks)) {
+					notify_attack("SYN scan, notified port closed",
+							h->ts,
+							tcpcon.dst_addr.ipv4,
+							tcpcon.src_addr.ipv4,
+							tcpcon.src_port);
+				}
 				remove_synned(&synned, &tcpcon);
 			}
 		}

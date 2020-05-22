@@ -4,6 +4,8 @@
 struct nward_hand_args {
 	char *name;
 	int lhdr_len;
+	int maxticks; // max ticks
+	int seconds;  // seconds per tick
 };
 
 void nward_config_incoming (pcap_t *pcap);

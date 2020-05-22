@@ -4,22 +4,158 @@
 !_TAG_PROGRAM_NAME	Exuberant Ctags	//
 !_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
 !_TAG_PROGRAM_VERSION	5.8	//
-CFLAGS	Makefile	/^CFLAGS  = -g$/;"	m
-LDFLAGS	Makefile	/^LDFLAGS = -lpcap$/;"	m
-NW_FILTER_XMAS	nward.h	19;"	d
-NW_MODE_XMAS	nward.h	/^typedef enum { NW_MODE_XMAS } nward_mode_t;$/;"	e	enum:__anon1
-NW_SNAPLEN	nward.c	8;"	d	file:
+CFLAGS	Makefile	/^CFLAGS  = -g -Ihashset$/;"	m
+HANDLER_H	handler.h	2;"	d
+HEADS_H	head.h	2;"	d
+IPV4HDRLEN	head.h	9;"	d
+IPVERSION	head.h	8;"	d
+LDFLAGS	Makefile	/^LDFLAGS = -Lhashset -lpcap -lhset -lpthread$/;"	m
+NW_FILTER_ACK	modes.h	2;"	d
+NW_FILTER_FIN	modes.h	5;"	d
+NW_FILTER_NULL	modes.h	4;"	d
+NW_FILTER_SYN	modes.h	1;"	d
+NW_FILTER_XMAS	modes.h	3;"	d
+NW_SNAPLEN	nward.c	9;"	d	file:
 N_MODES	nward.h	5;"	d
+SUSP_H	susp.h	2;"	d
+SYNNED_H	synned.h	2;"	d
+TCPACK	head.h	12;"	d
+TCPFIN	head.h	14;"	d
+TCPRST	head.h	13;"	d
+TCPSYN	head.h	11;"	d
+ackno	head.h	/^	u_int ackno;$/;"	m	struct:tcp_head
+add_susp	susp.h	/^static int add_susp (struct susp_list *list, const struct suspect *psus)$/;"	f
+add_synned	handler.c	/^static int add_synned (struct synned_list *list, const struct tcp_con *pcon)$/;"	f	file:
+add_synned	synned.h	/^static int add_synned (struct synned_list *list, const struct tcp_con *pcon)$/;"	f
+addr	susp.h	/^	} addr;$/;"	m	struct:suspect	typeref:union:suspect::__anon3
+args	susp.h	/^struct args {$/;"	s
+bytes	head.h	/^	u_char bytes[8];$/;"	m	struct:ipv6_addr
+bytes	head.h	/^	u_char bytes[8];$/;"	m	struct:ipv6_head_frag
+bytes	ipv4_head.h	/^	u_char bytes[4];$/;"	m	struct:ipv4_addr
 callback	nward.h	/^	pcap_handler callback;$/;"	m	struct:mode_opt
+cap	susp.h	/^	size_t cap;$/;"	m	struct:susp_list
+checksum	head.h	/^	u_short checksum;$/;"	m	struct:tcp_head
+config	nward.h	/^	void (*config)(pcap_t*);$/;"	m	struct:mode_opt
+crc	ipv4_head.h	/^    u_short crc;            \/\/ Checksum$/;"	m	struct:udp_head
+crc	ipv4_head.h	/^    u_short crc;            \/\/ Header checksum$/;"	m	struct:ipv4_head
+daddr	head.h	/^    ipv6_addr daddr;   \/\/ Destination address$/;"	m	struct:ipv6_head
+daddr	ipv4_head.h	/^    ipv4_addr daddr;        \/\/ Destination address$/;"	m	struct:ipv4_head
+doff_ns	head.h	/^	u_char doff_ns;$/;"	m	struct:tcp_head
+dport	ipv4_head.h	/^    u_short dport;          \/\/ Destination port$/;"	m	struct:udp_head
+dst_addr	handler.c	/^	} dst_addr;$/;"	m	struct:tcp_con	typeref:union:tcp_con::__anon1	file:
+dst_addr	synned.h	/^	} dst_addr;$/;"	m	struct:tcp_con	typeref:union:tcp_con::__anon4
+dst_port	handler.c	/^	u_short dst_port;$/;"	m	struct:tcp_con	file:
+dst_port	head.h	/^	u_short dst_port;$/;"	m	struct:tcp_head
+dst_port	synned.h	/^	u_short dst_port;$/;"	m	struct:tcp_con
 filter	nward.h	/^	char *filter;$/;"	m	struct:mode_opt
-init_pcap	nward.c	/^static pcap_t *init_pcap(char *devname)$/;"	f	file:
+finning	handler.c	/^	int finning;$/;"	m	struct:tcp_con	file:
+finning	synned.h	/^	int finning;$/;"	m	struct:tcp_con
+fl2	head.h	/^    u_short fl2;       \/\/ Flow Label (last 16 bits)$/;"	m	struct:ipv6_head
+flags	head.h	/^	u_char flags;$/;"	m	struct:tcp_head
+flags_fo	ipv4_head.h	/^    u_short flags_fo;       \/\/ Flags (3 bits) + Fragment offset (13 bits)$/;"	m	struct:ipv4_head
+head_len	head.h	/^	u_char head_len;$/;"	m	struct:ipv6_head_hbh
+head_len	head.h	/^	u_char head_len;$/;"	m	struct:ipv6_head_rout
+hop_limit	head.h	/^    u_char  hop_limit; \/\/ Hop Limit$/;"	m	struct:ipv6_head
+identification	ipv4_head.h	/^    u_short identification; \/\/ Identification$/;"	m	struct:ipv4_head
+init_pcap_live	nward.c	/^static pcap_t *init_pcap_live(char *devname, struct mode_opt *mode)$/;"	f	file:
+ip_ver	handler.c	/^	int ip_ver;$/;"	m	struct:tcp_con	file:
+ip_ver	susp.h	/^	int ip_ver;$/;"	m	struct:suspect
+ip_ver	synned.h	/^	int ip_ver;$/;"	m	struct:tcp_con
+ipv4	handler.c	/^		ipv4_addr ipv4;$/;"	m	union:tcp_con::__anon1	file:
+ipv4	handler.c	/^		ipv4_addr ipv4;$/;"	m	union:tcp_con::__anon2	file:
+ipv4	susp.h	/^		ipv4_addr ipv4;$/;"	m	union:suspect::__anon3
+ipv4	synned.h	/^		ipv4_addr ipv4;$/;"	m	union:tcp_con::__anon4
+ipv4	synned.h	/^		ipv4_addr ipv4;$/;"	m	union:tcp_con::__anon5
+ipv4_addr	ipv4_head.h	/^typedef struct ipv4_addr {$/;"	s
+ipv4_addr	ipv4_head.h	/^} ipv4_addr;$/;"	t	typeref:struct:ipv4_addr
+ipv4_head	ipv4_head.h	/^struct ipv4_head {$/;"	s
+ipv6	handler.c	/^		ipv6_addr ipv6;$/;"	m	union:tcp_con::__anon1	file:
+ipv6	handler.c	/^		ipv6_addr ipv6;$/;"	m	union:tcp_con::__anon2	file:
+ipv6	susp.h	/^		ipv6_addr ipv6;$/;"	m	union:suspect::__anon3
+ipv6	synned.h	/^		ipv6_addr ipv6;$/;"	m	union:tcp_con::__anon4
+ipv6	synned.h	/^		ipv6_addr ipv6;$/;"	m	union:tcp_con::__anon5
+ipv6_addr	head.h	/^typedef struct ipv6_addr {$/;"	s
+ipv6_addr	head.h	/^} ipv6_addr;$/;"	t	typeref:struct:ipv6_addr
+ipv6_head	head.h	/^struct ipv6_head {$/;"	s
+ipv6_head_frag	head.h	/^struct ipv6_head_frag {$/;"	s
+ipv6_head_hbh	head.h	/^struct ipv6_head_hbh {$/;"	s
+ipv6_head_rout	head.h	/^struct ipv6_head_rout {$/;"	s
+len	ipv4_head.h	/^    u_short len;            \/\/ Datagram length$/;"	m	struct:udp_head
+lhdr_len	handler.h	/^	int lhdr_len;$/;"	m	struct:nward_hand_args
+list	susp.h	/^	struct susp_list *list;$/;"	m	struct:args	typeref:struct:args::susp_list
+list	susp.h	/^	struct suspect *list;$/;"	m	struct:susp_list	typeref:struct:susp_list::suspect
 list_devs	nward.c	/^static void list_devs ()$/;"	f	file:
+lock	handler.c	/^	pthread_mutex_t lock;$/;"	m	struct:synned_list	file:
+lock	susp.h	/^	pthread_mutex_t lock;$/;"	m	struct:susp_list
+lock	synned.h	/^	pthread_mutex_t lock;$/;"	m	struct:synned_list
+ltype_to_lhdrlen	nward.h	/^static inline int ltype_to_lhdrlen (int linktype) {$/;"	f
 main	nward.c	/^int main(int argc, char **argv)$/;"	f
+match_susp	susp.h	/^static int match_susp (struct susp_list *list, const ipv4_addr addr, int *pi)$/;"	f
+match_synned	handler.c	/^static int match_synned (struct synned_list *list, const struct tcp_con *pcon, int *pi)$/;"	f	file:
+match_synned	synned.h	/^static int match_synned (struct synned_list *list, const struct tcp_con *pcon, int *pi)$/;"	f
+maxticks	handler.h	/^	int maxticks; \/\/ max ticks$/;"	m	struct:nward_hand_args
 mode_opt	nward.h	/^struct mode_opt {$/;"	s
-modes	nward.h	/^struct mode_opt modes[] = {$/;"	v	typeref:struct:mode_opt
-nward_echo_handler	nward.c	/^void nward_echo_handler (u_char *user, const struct pcap_pkthdr *h, const u_char *bytes)$/;"	f
-nward_mdef_t	nward.h	/^typedef void (*nward_mdef_t) (pcap_t *, int pc);$/;"	t
-nward_mode_t	nward.h	/^typedef enum { NW_MODE_XMAS } nward_mode_t;$/;"	t	typeref:enum:__anon1
+modes	modes.h	/^struct mode_opt modes[] = {$/;"	v	typeref:struct:mode_opt
+name	handler.h	/^	char *name;$/;"	m	struct:nward_hand_args
+name	nward.h	/^	char *name;$/;"	m	struct:mode_opt
+next_head	head.h	/^	u_char next_head;$/;"	m	struct:ipv6_head_hbh
+next_head	head.h	/^	u_char next_head;$/;"	m	struct:ipv6_head_rout
+next_head	head.h	/^    u_char  next_head; \/\/ Next Header$/;"	m	struct:ipv6_head
+notify_attack	handler.c	/^static void notify_attack (const char *msg, ipv4_addr attacker, ipv4_addr victim, int port) {$/;"	f	file:
+nward_ack_handler	handler.c	/^void nward_ack_handler  (u_char *user, const struct pcap_pkthdr *h, const u_char *bytes)$/;"	f
+nward_config_both	handler.c	/^void nward_config_both (pcap_t *pcap) {$/;"	f
+nward_config_incoming	handler.c	/^void nward_config_incoming (pcap_t *pcap) {$/;"	f
+nward_echo_handler	handler.c	/^void nward_echo_handler (u_char *user, const struct pcap_pkthdr *h, const u_char *bytes)$/;"	f
+nward_hand_args	handler.h	/^struct nward_hand_args {$/;"	s
+nward_mode_t	nward.h	/^typedef struct mode_opt *nward_mode_t;$/;"	t	typeref:struct:mode_opt
+nward_syn_handler	handler.c	/^void nward_syn_handler  (u_char *user, const struct pcap_pkthdr *h, const u_char *bytes)$/;"	f
+op_pad	ipv4_head.h	/^    u_int   op_pad;         \/\/ Option + Padding$/;"	m	struct:ipv4_head
 opt	nward.h	/^	char opt;$/;"	m	struct:mode_opt
+opts_pad	head.h	/^	u_char opts_pad[40];$/;"	m	struct:tcp_head
+pl_len	head.h	/^    u_short pl_len;    \/\/ Payload length$/;"	m	struct:ipv6_head
 print_usage	nward.c	/^static void print_usage()$/;"	f	file:
-run_mode	nward.c	/^static void run_mode(pcap_t *pcap, int pc, struct mode_opt *mode)$/;"	f	file:
+proto	ipv4_head.h	/^    u_char  proto;          \/\/ Protocol$/;"	m	struct:ipv4_head
+remove_susp	susp.h	/^static void remove_susp (struct susp_list *list, const ipv4_addr addr) {$/;"	f
+remove_synned	handler.c	/^static void remove_synned (struct synned_list *list, const struct tcp_con *pcon) {$/;"	f	file:
+remove_synned	synned.h	/^static void remove_synned (struct synned_list *list, const struct tcp_con *pcon) {$/;"	f
+replied	handler.c	/^	int replied;$/;"	m	struct:tcp_con	file:
+replied	synned.h	/^	int replied;$/;"	m	struct:tcp_con
+run_mode	nward.c	/^static void run_mode(pcap_t *pcap, int pc, int mt, int to, struct mode_opt *mode)$/;"	f	file:
+s_cap	handler.c	/^	size_t s_cap;$/;"	m	struct:synned_list	file:
+s_cap	synned.h	/^	size_t s_cap;$/;"	m	struct:synned_list
+s_size	handler.c	/^	size_t s_size;$/;"	m	struct:synned_list	file:
+s_size	synned.h	/^	size_t s_size;$/;"	m	struct:synned_list
+saddr	head.h	/^    ipv6_addr saddr;   \/\/ Source address$/;"	m	struct:ipv6_head
+saddr	ipv4_head.h	/^    ipv4_addr saddr;        \/\/ Source address$/;"	m	struct:ipv4_head
+seconds	handler.h	/^	int seconds;  \/\/ seconds per tick$/;"	m	struct:nward_hand_args
+seconds	susp.h	/^	int seconds;$/;"	m	struct:args
+seqno	head.h	/^	u_int seqno;$/;"	m	struct:tcp_head
+size	susp.h	/^	size_t size;$/;"	m	struct:susp_list
+sport	ipv4_head.h	/^    u_short sport;          \/\/ Source port$/;"	m	struct:udp_head
+src_addr	handler.c	/^	} src_addr;$/;"	m	struct:tcp_con	typeref:union:tcp_con::__anon2	file:
+src_addr	synned.h	/^	} src_addr;$/;"	m	struct:tcp_con	typeref:union:tcp_con::__anon5
+src_port	handler.c	/^	u_short src_port;$/;"	m	struct:tcp_con	file:
+src_port	head.h	/^	u_short src_port;$/;"	m	struct:tcp_head
+src_port	synned.h	/^	u_short src_port;$/;"	m	struct:tcp_con
+start_tick_alrm	susp.h	/^int start_tick_alrm (struct susp_list *list, int seconds) {$/;"	f
+susp_list	susp.h	/^struct susp_list {$/;"	s
+suspect	susp.h	/^struct suspect {$/;"	s
+synned	handler.c	/^	struct tcp_con *synned;$/;"	m	struct:synned_list	typeref:struct:synned_list::tcp_con	file:
+synned	synned.h	/^	struct tcp_con *synned;$/;"	m	struct:synned_list	typeref:struct:synned_list::tcp_con
+synned_list	handler.c	/^struct synned_list {$/;"	s	file:
+synned_list	synned.h	/^struct synned_list {$/;"	s
+tc2_fl1	head.h	/^    u_char  tc2_fl1;   \/\/ Traffic Class (last 4 bits) + Flow Label (first 4 bits)$/;"	m	struct:ipv6_head
+tcp_con	handler.c	/^struct tcp_con {$/;"	s	file:
+tcp_con	synned.h	/^struct tcp_con {$/;"	s
+tcp_head	head.h	/^struct tcp_head {$/;"	s
+tick_alrm_hand	susp.h	/^void *tick_alrm_hand (void *pargs) {$/;"	f
+tick_susp_tcp	susp.h	/^int tick_susp_tcp (struct susp_list *list, const ipv4_addr addr, int max)$/;"	f
+ticks	susp.h	/^	int ticks;$/;"	m	struct:suspect
+tlen	ipv4_head.h	/^    u_short tlen;           \/\/ Total length $/;"	m	struct:ipv4_head
+tos	ipv4_head.h	/^    u_char  tos;            \/\/ Type of service $/;"	m	struct:ipv4_head
+ttl	ipv4_head.h	/^    u_char  ttl;            \/\/ Time to live$/;"	m	struct:ipv4_head
+udp_head	ipv4_head.h	/^struct udp_head {$/;"	s
+urg_ptr	head.h	/^	u_short urg_ptr;$/;"	m	struct:tcp_head
+ver_ihl	ipv4_head.h	/^    u_char  ver_ihl;        \/\/ Version (4 bits) + Internet header length (4 bits)$/;"	m	struct:ipv4_head
+ver_tc1	head.h	/^    u_char  ver_tc1;   \/\/ Version (4 bits) + Traffic Class (first 4 bits)$/;"	m	struct:ipv6_head
+win_size	head.h	/^	u_short win_size;$/;"	m	struct:tcp_head
