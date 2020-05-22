@@ -93,7 +93,7 @@ void nward_udp_handler  (u_char *user, const struct pcap_pkthdr *h, const u_char
 	}
 
 	if (args.live) {
-		if (alrm_started) {
+		if (!alrm_started) {
 			while (start_live_ticker(&susp, args.usec));
 			alrm_started = 1;
 		}
@@ -142,7 +142,7 @@ void nward_ack_handler  (u_char *user, const struct pcap_pkthdr *h, const u_char
 	}
 
 	if (args.live) {
-		if (alrm_started) {
+		if (!alrm_started) {
 			while (start_live_ticker(&susp, args.usec));
 			alrm_started = 1;
 		}
@@ -237,7 +237,7 @@ void nward_syn_handler  (u_char *user, const struct pcap_pkthdr *h, const u_char
 	}
 
 	if (args.live) {
-		if (alrm_started) {
+		if (!alrm_started) {
 			while (start_live_ticker(&susp, args.usec));
 			alrm_started = 1;
 		}
