@@ -1,0 +1,5 @@
+tick_susp_tcp -> tick_susp
+descomponer susp.h y synned.h en .h y .c
+Makefile
+organizar pcaps
+eliminar hashset
