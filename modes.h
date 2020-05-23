@@ -5,7 +5,18 @@
 #define NW_FILTER_NULL "tcp and tcp[tcpflags] = 0"
 #define NW_FILTER_FIN  "tcp and tcp[tcpflags] = tcp-fin"
 
-#include "handler.h"
+#define N_MODES (sizeof (modes) / sizeof (struct mode_opt))
+
+struct mode_opt {
+	char opt;
+	char *name;
+	char *filter;
+	void (*config)(pcap_t*);
+	pcap_handler callback;
+};
+typedef struct mode_opt *nward_mode_t;
+
+#include "handler/handler.h"
 
 struct mode_opt modes[] = {
     /*opt  name    filter          config                 callback           */

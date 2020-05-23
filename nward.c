@@ -8,7 +8,31 @@
 
 #define NW_SNAPLEN 256
 
-#include "nward.h"
+#include "modes.h"
+
+static inline int ltype_to_lhdrlen (int linktype) {
+	int linkhdrlen;
+	switch (linktype)
+	{
+		case DLT_NULL:
+			linkhdrlen = 4;
+			break;
+
+		case DLT_EN10MB:
+			linkhdrlen = 14;
+			break;
+		case DLT_LINUX_SLL:
+			linkhdrlen = 16;
+			break;
+		case DLT_SLIP:
+		case DLT_PPP:
+			linkhdrlen = 24;
+			break;
+		default:
+			linkhdrlen = -1;
+	}
+	return linkhdrlen;
+}
 
 static void run_mode(pcap_t *pcap, int pc, int mt, useconds_t to, int warn, int live, struct mode_opt *mode)
 {
@@ -263,3 +287,6 @@ int main(int argc, char **argv)
 
 	return err;
 }
+
+/** interface (auxiliary defaults) */
+

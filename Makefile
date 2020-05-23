@@ -1,16 +1,21 @@
-LDFLAGS = -Lhashset -lpcap -lhset -lpthread
-CFLAGS  = -g -Ihashset -Wall
+LDFLAGS = -lpcap -lpthread
+CFLAGS  = -I. -Wall -MMD -MP
 
-nward: nward.o handler.o
-	$(CC) -o $@ $^ $(LDFLAGS) $(CFLAGS)
+SRCS := nward.c
+SRCS += $(wildcard data/*.c)
+SRCS += $(wildcard handler/*.c)
+SRCS += $(wildcard vector/*.c)
 
-nward.o: nward.c nward.h modes.h handler.h
-	$(CC) -c -o $@ $< $(LDFLAGS) $(CFLAGS)
+OBJS = $(SRCS:.c=.o)
+DEPS = $(SRCS:.c=.d)
+TARG = nward
 
-handler.o: handler.c modes.h head.h ipv4_head.h susp.h synned.h susp.h
-	$(CC) -c -o $@ $< $(LDFLAGS) $(CFLAGS)
+$(TARG): $(OBJS)
+	$(CC) -o $@ $(OBJS) $(LDFLAGS) $(CFLAGS)
 
 clean:
-	$(RM) *.o nward
+	$(RM) $(OBJS) $(DEPS) $(TARG)
+
+-include $(DEPS)
 
 .PHONY: clean

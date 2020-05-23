@@ -1,58 +1,26 @@
-#ifndef SUSP_H
-#define SUSP_H
+#include "susp.h"
 
-#include <pthread.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
+#include "head/head.h"
 
-struct suspect {
-	int ip_ver;
-	union {
-		ipv4_addr ipv4;
-		ipv6_addr ipv6;
-	} addr;
-	int ticks;
-};
-
-struct susp_list {
-	struct suspect *list;
-	size_t size;
-	size_t cap;
-	pthread_mutex_t lock;
-};
-
-static int add_susp (struct susp_list *list, const struct suspect *psus)
+int susp_add (struct susp_list *list, const struct suspect *psus)
 {
 	int ret = 0;
 	pthread_mutex_lock(&list->lock);
-	if (list->list == NULL) {
-		void *newsus = calloc(16, sizeof(struct suspect));
-		if (newsus == NULL) ret = -1;
-		else list->list = newsus;
-	} else if (list->size == list->cap) {
-		void *newsus = realloc(list->list, list->cap + list->cap);
-		if (newsus == NULL) ret = -1;
-		else list->list = newsus;
-	} 
-	if (!ret) {
-		list->list[list->size] = *psus;
-		list->size++;
-	}
+	struct suspect sus = *psus;
+	ret = vector_push_back(&list->vector, &sus);
 	pthread_mutex_unlock(&list->lock);
 	return ret;
 }
 
-static int match_susp (struct susp_list *list, const ipv4_addr addr, int *pi)
+int match_susp (struct susp_list *list, const ipv4_addr addr, int *pi)
 {
-	struct suspect sus;
+	const struct suspect *sus;
 	int ret = 0;
 
 	pthread_mutex_lock(&list->lock);
-	for (int i = 0; i < list->size; i++) {
-		sus = list->list[i];
-		if(sus.ip_ver == 4 &&
-		   !memcmp(&addr, &sus.addr, sizeof(sus.addr.ipv4)))
+	for (int i = 0; i < list->vector.size; i++) {
+		sus = ((struct suspect *) vector_const_get(&list->vector, i));
+		if(sus->ip_ver == 4 && !memcmp(&addr, &sus->addr, sizeof(sus->addr.ipv4)))
 		{
 			*pi = i;
 			ret = 1;
@@ -62,17 +30,12 @@ static int match_susp (struct susp_list *list, const ipv4_addr addr, int *pi)
 	return ret;
 }
 
-static void remove_susp (struct susp_list *list, const ipv4_addr addr) {
+void remove_susp (struct susp_list *list, const ipv4_addr addr)
+{
 	int i, ret = match_susp (list, addr, &i);
 	pthread_mutex_lock(&list->lock);
-	if (ret && list->size > 0) {
-		if (i == 0 && list->size == 1) {
-			free (list->list);
-			list->list = NULL;
-		} else if (i < list->size-1) {
-			memmove (list->list + i, list->list + i+1, sizeof(*list->list) * (list->size - i)); 
-		}
-		list->size--;
+	if (ret) {
+		vector_erase (&list->vector, i);
 	}
 	pthread_mutex_unlock(&list->lock);
 }
@@ -84,9 +47,11 @@ struct args {
 
 static void tick_all (struct susp_list *list) {
 	pthread_mutex_lock(&list->lock);
-	for (int i = 0; i < list->size; i++) {
-		if (list->list[i].ticks > 0) {
-			list->list[i].ticks--;
+	struct suspect *sus;
+	for (int i = 0; i < list->vector.size; i++) {
+		sus = (struct suspect *) vector_get(&list->vector, i);
+		if (sus->ticks > 0) {
+			sus->ticks--;
 			/*
 			printf("%d.%d.%d.%d: s-valor %d (-1)\n",
 					list->list[i].addr.ipv4.bytes[0],
@@ -96,16 +61,15 @@ static void tick_all (struct susp_list *list) {
 					list->list[i].ticks);
 			*/
 		}
-		if (list->list[i].ticks == 0) {
-			pthread_mutex_unlock(&list->lock);
-			remove_susp (list, list->list[i].addr.ipv4);
-			pthread_mutex_lock(&list->lock);
+		if (sus->ticks == 0) {
+			vector_erase (&list->vector, i);
+			i--;
 		}
 	}
 	pthread_mutex_unlock(&list->lock);
 }
 
-void *tick_alrm_hand (void *pargs) {
+static void *tick_alrm_hand (void *pargs) {
 	struct args args = *((struct args *)pargs);
 	free(pargs);
 	while (1) {
@@ -151,12 +115,13 @@ int tick_susp_tcp (struct susp_list *list, const ipv4_addr addr, int max)
 	};
 	int i, danger = 0, ret = match_susp(list, addr, &i);
 	if (!ret) {
-		add_susp (list, &sus);
+		susp_add (list, &sus);
 	} else {
 		pthread_mutex_lock(&list->lock);
-		list->list[i].ticks++;
-		if (list->list[i].ticks > max) {
-			list->list[i].ticks--;
+		struct suspect *match = vector_get(&list->vector, i);
+		match->ticks++;
+		if (match->ticks > max) {
+			match->ticks--;
 			danger = 1;
 		} else {
 			/*
@@ -173,4 +138,4 @@ int tick_susp_tcp (struct susp_list *list, const ipv4_addr addr, int max)
 	return danger;
 }
 
-#endif
+
