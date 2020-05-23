@@ -18,16 +18,16 @@ void nward_udp_handler  (u_char *user, const struct pcap_pkthdr *h, const u_char
 
 	if (args.live) {
 		if (!alrm_started) {
-			while (start_live_ticker(&susp, args.usec));
+			while (susp_start_live_ticker(&susp, args.usec));
 			alrm_started = 1;
 		}
 	} else {
-		tick_offline(&susp, h->ts, args.usec);
+		susp_tick_offline(&susp, h->ts, args.usec);
 	}
 
 	u_short dst_port = ntohs(udphead.dport);
 
-	if (tick_susp_tcp(&susp, iphead.daddr, args.maxticks)) {
+	if (susp_tick(&susp, iphead.daddr, args.maxticks)) {
 		notify_attack("UDP scan",
 				h->ts,
 				iphead.saddr,

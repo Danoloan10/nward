@@ -11,7 +11,7 @@ DEPS = $(SRCS:.c=.d)
 TARG = nward
 
 $(TARG): $(OBJS)
-	$(CC) -o $@ $(OBJS) $(LDFLAGS) $(CFLAGS)
+	$(CC) $(LDFLAGS) -o $@ $(OBJS)
 
 clean:
 	$(RM) $(OBJS) $(DEPS) $(TARG)

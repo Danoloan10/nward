@@ -25,11 +25,11 @@ struct susp_list {
 	pthread_mutex_t lock;
 };
 
-int add_susp (struct susp_list *list, const struct suspect *psus);
-int match_susp (struct susp_list *list, const ipv4_addr addr, int *pi);
-void remove_susp (struct susp_list *list, const ipv4_addr addr);
-void tick_offline (struct susp_list *list, struct timeval ts, useconds_t usec);
-int start_live_ticker (struct susp_list *list, useconds_t usec);
-int tick_susp_tcp (struct susp_list *list, const ipv4_addr addr, int max);
+int susp_add (struct susp_list *list, const struct suspect *psus);
+int susp_match (struct susp_list *list, const ipv4_addr addr, int *pi);
+void susp_remove (struct susp_list *list, const ipv4_addr addr);
+void susp_tick_offline (struct susp_list *list, struct timeval ts, useconds_t usec);
+int susp_start_live_ticker (struct susp_list *list, useconds_t usec);
+int susp_tick (struct susp_list *list, const ipv4_addr addr, int max);
 
 #endif

@@ -28,11 +28,11 @@ void nward_ack_handler  (u_char *user, const struct pcap_pkthdr *h, const u_char
 
 	if (args.live) {
 		if (!alrm_started) {
-			while (start_live_ticker(&susp, args.usec));
+			while (susp_start_live_ticker(&susp, args.usec));
 			alrm_started = 1;
 		}
 	} else {
-		tick_offline(&susp, h->ts, args.usec);
+		susp_tick_offline(&susp, h->ts, args.usec);
 	}
 
 	struct tcp_head tcphead = *((struct tcp_head *) (bytes + args.lhdr_len + IPV4HDRLEN(&iphead)));
@@ -65,7 +65,7 @@ ip_ver: 4,
 
 			if (TCPRST(tcphead.flags)) {
 				if (ret < 0 && !(found.replied)){
-					if (tick_susp_tcp(&susp, tcpcon.dst_addr.ipv4, args.maxticks)) {
+					if (susp_tick(&susp, tcpcon.dst_addr.ipv4, args.maxticks)) {
 						notify_attack("ACK scan",
 								h->ts,
 								tcpcon.dst_addr.ipv4,
@@ -79,7 +79,7 @@ ip_ver: 4,
 								tcpcon.src_port);
 					}
 					/*
-					   if (tick_susp_tcp(&susp, tcpcon.src_addr.ipv4, maxticks))
+					   if (susp_tick(&susp, tcpcon.src_addr.ipv4, maxticks))
 					   notify_attack("ACK scan", tcpcon.src_addr.ipv4, tcpcon.dst_addr.ipv4, tcpcon.dst_port);
 					   */
 				}

@@ -12,7 +12,7 @@ int susp_add (struct susp_list *list, const struct suspect *psus)
 	return ret;
 }
 
-int match_susp (struct susp_list *list, const ipv4_addr addr, int *pi)
+int susp_match (struct susp_list *list, const ipv4_addr addr, int *pi)
 {
 	const struct suspect *sus;
 	int ret = 0;
@@ -30,9 +30,9 @@ int match_susp (struct susp_list *list, const ipv4_addr addr, int *pi)
 	return ret;
 }
 
-void remove_susp (struct susp_list *list, const ipv4_addr addr)
+void susp_remove (struct susp_list *list, const ipv4_addr addr)
 {
-	int i, ret = match_susp (list, addr, &i);
+	int i, ret = susp_match (list, addr, &i);
 	pthread_mutex_lock(&list->lock);
 	if (ret) {
 		vector_erase (&list->vector, i);
@@ -45,7 +45,7 @@ struct args {
 	useconds_t usec;
 };
 
-static void tick_all (struct susp_list *list) {
+static void _tick_all (struct susp_list *list) {
 	pthread_mutex_lock(&list->lock);
 	struct suspect *sus;
 	for (int i = 0; i < list->vector.size; i++) {
@@ -69,27 +69,27 @@ static void tick_all (struct susp_list *list) {
 	pthread_mutex_unlock(&list->lock);
 }
 
-static void *tick_alrm_hand (void *pargs) {
+static void *_tick_alrm_hand (void *pargs) {
 	struct args args = *((struct args *)pargs);
 	free(pargs);
 	while (1) {
 		struct susp_list *list = args.list;
-		tick_all(list);
+		_tick_all(list);
 		usleep(args.usec);
 	}
 	return NULL;
 }
 
-void tick_offline (struct susp_list *list, struct timeval ts, useconds_t usec)
+void susp_tick_offline (struct susp_list *list, struct timeval ts, useconds_t usec)
 {
 	static struct timeval last = { 0, 0 };
 	if ((ts.tv_sec - last.tv_sec)*1000000 + (ts.tv_usec - last.tv_usec) > usec) {
 		last = ts;
-		tick_all(list);
+		_tick_all(list);
 	}
 }
 
-int start_live_ticker (struct susp_list *list, useconds_t usec)
+int susp_start_live_ticker (struct susp_list *list, useconds_t usec)
 {
 	struct args *args = malloc(sizeof(struct args));
 	if (args != NULL) {
@@ -98,7 +98,7 @@ int start_live_ticker (struct susp_list *list, useconds_t usec)
 		pthread_attr_t attr;
 		pthread_attr_init(&attr);
 		pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
-		pthread_create(&th, &attr, tick_alrm_hand, args);
+		pthread_create(&th, &attr, _tick_alrm_hand, args);
 		return 0;
 	} else {
 		perror("malloc");
@@ -106,14 +106,14 @@ int start_live_ticker (struct susp_list *list, useconds_t usec)
 	}
 }
 
-int tick_susp_tcp (struct susp_list *list, const ipv4_addr addr, int max)
+int susp_tick (struct susp_list *list, const ipv4_addr addr, int max)
 {
 	struct suspect sus = {
 		ip_ver: 4,
 		addr:   { ipv4: addr },
 		ticks:  0
 	};
-	int i, danger = 0, ret = match_susp(list, addr, &i);
+	int i, danger = 0, ret = susp_match(list, addr, &i);
 	if (!ret) {
 		susp_add (list, &sus);
 	} else {
