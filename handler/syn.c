@@ -46,7 +46,7 @@ ip_ver: 4,
 		}
 	} else if (ret > 0) {
 		if (TCPRST(tcphead.flags)) {
-			if (susp_tick(&susp, tcpcon.src_addr.ipv4, args.maxticks)) {
+			if (susp_tick_addr(&susp, tcpcon.src_addr.ipv4, args.maxticks)) {
 				notify_attack("SYN scan, notified port open",
 						h->ts,
 						tcpcon.src_addr.ipv4,
@@ -65,7 +65,7 @@ ip_ver: 4,
 		}
 	} else if (ret < 0) {
 		if (TCPRST(tcphead.flags)) {
-			if (susp_tick(&susp, tcpcon.dst_addr.ipv4, args.maxticks)) {
+			if (susp_tick_addr(&susp, tcpcon.dst_addr.ipv4, args.maxticks)) {
 				notify_attack("SYN scan, notified port closed",
 						h->ts,
 						tcpcon.dst_addr.ipv4,

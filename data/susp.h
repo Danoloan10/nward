@@ -11,12 +11,18 @@
 
 #define SUSP_INITIALIZER { VECTOR_INITIALIZER(sizeof(struct suspect)), PTHREAD_MUTEX_INITIALIZER }
 
-struct suspect {
-	int ip_ver;
+struct u_ip_port {
+	int t;
 	union {
 		ipv4_addr ipv4;
 		ipv6_addr ipv6;
 	} addr;
+	u_short port;	
+};
+
+struct suspect {
+	int ip_ver;
+	struct u_ip_port u;
 	int ticks;
 };
 
@@ -25,11 +31,10 @@ struct susp_list {
 	pthread_mutex_t lock;
 };
 
-int susp_add (struct susp_list *list, const struct suspect *psus);
-int susp_match (struct susp_list *list, const ipv4_addr addr, int *pi);
-void susp_remove (struct susp_list *list, const ipv4_addr addr);
 void susp_tick_offline (struct susp_list *list, struct timeval ts, useconds_t usec);
 int susp_start_live_ticker (struct susp_list *list, useconds_t usec);
-int susp_tick (struct susp_list *list, const ipv4_addr addr, int max);
+int susp_tick_addr (struct susp_list *list, const ipv4_addr addr, int max);
+int susp_tick_port (struct susp_list *list, const u_short port, int max);
+int susp_tick_both (struct susp_list *list, const ipv4_addr addr, const u_short port, int max);
 
 #endif

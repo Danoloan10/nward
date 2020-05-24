@@ -9,9 +9,9 @@
 struct nward_hand_args {
 	char *name;
 	int lhdr_len;
-	int maxticks; // max ticks
-	useconds_t usec;  // seconds per tick
-	int warn;
+	int maxticks;    //-m
+	useconds_t usec; //-t seconds per tick
+	int warn;        //-w
 	int live;
 };
 
@@ -27,9 +27,10 @@ void nward_config_both (pcap_t *pcap);
 void nward_echo_handler (u_char *user, const struct pcap_pkthdr *h, const u_char *bytes);
 
 
+void nward_echo_handler (u_char *user, const struct pcap_pkthdr *h, const u_char *bytes);
 void nward_udp_handler  (u_char *user, const struct pcap_pkthdr *h, const u_char *bytes);
 void nward_ack_handler  (u_char *user, const struct pcap_pkthdr *h, const u_char *bytes);
 void nward_syn_handler  (u_char *user, const struct pcap_pkthdr *h, const u_char *bytes);
-void nward_echo_handler (u_char *user, const struct pcap_pkthdr *h, const u_char *bytes);
+void nward_connect_handler  (u_char *user, const struct pcap_pkthdr *h, const u_char *bytes);
 
 #endif /* HANDLER_H */

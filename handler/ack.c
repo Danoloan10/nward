@@ -65,7 +65,7 @@ ip_ver: 4,
 
 			if (TCPRST(tcphead.flags)) {
 				if (ret < 0 && !(found.replied)){
-					if (susp_tick(&susp, tcpcon.dst_addr.ipv4, args.maxticks)) {
+					if (susp_tick_addr(&susp, tcpcon.dst_addr.ipv4, args.maxticks)) {
 						notify_attack("ACK scan",
 								h->ts,
 								tcpcon.dst_addr.ipv4,
@@ -79,7 +79,7 @@ ip_ver: 4,
 								tcpcon.src_port);
 					}
 					/*
-					   if (susp_tick(&susp, tcpcon.src_addr.ipv4, maxticks))
+					   if (susp_tick_addr(&susp, tcpcon.src_addr.ipv4, maxticks))
 					   notify_attack("ACK scan", tcpcon.src_addr.ipv4, tcpcon.dst_addr.ipv4, tcpcon.dst_port);
 					   */
 				}

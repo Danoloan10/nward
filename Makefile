@@ -1,5 +1,5 @@
 LDFLAGS = -lpcap -lpthread
-CFLAGS  = -I. -Wall -MMD -MP
+CFLAGS  = -g -I. -Wall -MMD -MP
 
 SRCS := nward.c
 SRCS += $(wildcard data/*.c)

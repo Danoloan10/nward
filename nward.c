@@ -105,7 +105,8 @@ static pcap_t *init_pcap_live(char *devname, struct mode_opt *mode)
 			pcap_set_timeout(pcap, 1);
 
 			// mode config
-			mode->config(pcap);
+			if (mode->config != NULL)
+				mode->config(pcap);
 
 			switch (warn = pcap_activate(pcap)) {
 				case 0: //OK
@@ -154,9 +155,9 @@ static void print_usage()
 {
 	fprintf(stderr, "\
 Usage:\n\
-	nward [options] -type\n\
+	nward [options] -mode\n\
 \n\
-All options and arguments following the type argument are ignored\n\
+All options and arguments following the mode argument are ignored\n\
 \n\
 options:\n\
 	-c N - analyse up to N packets (0 or less for infinity, default: 0)\n\
@@ -172,11 +173,12 @@ options:\n\
 	       the packet reads and timeouts are based on the timestamps of the packets\n\
 	       (must be positive, default 100)\n\
 	-w   - print scan warnings when suspicious\n\
-types:\n\
+mode:\n\
 	-A - ward from ACK scans\n\
 	-F - ward from FIN scans\n\
 	-N - ward from NULL scans\n\
 	-S - ward from SYN scans\n\
+	-T - ward from Connect scans\n\
 	-U - ward from UDP scans\n\
 	-X - ward from Xmas scans\n\
 Example:\n\
@@ -287,6 +289,3 @@ int main(int argc, char **argv)
 
 	return err;
 }
-
-/** interface (auxiliary defaults) */
-

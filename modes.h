@@ -20,10 +20,11 @@ typedef struct mode_opt *nward_mode_t;
 
 struct mode_opt modes[] = {
     /*opt  name    filter          config                 callback           */
-	{ 'U', "udp",  NW_FILTER_UDP,  nward_config_incoming, nward_udp_handler  },
-	{ 'S', "syn",  NW_FILTER_SYN,  nward_config_both,     nward_syn_handler  },
-	{ 'A', "ack",  NW_FILTER_ACK,  nward_config_both,     nward_ack_handler  }, //TODO revisar finalizacion de conexion
-	{ 'X', "xmas", NW_FILTER_XMAS, nward_config_incoming, nward_echo_handler },
-	{ 'N', "null", NW_FILTER_NULL, nward_config_incoming, nward_echo_handler },
-	{ 'F', "fin",  NW_FILTER_FIN,  nward_config_incoming, nward_echo_handler },
+	{ 'U', "udp",  NW_FILTER_UDP,  nward_config_incoming, nward_udp_handler     },
+	{ 'S', "syn",  NW_FILTER_SYN,  nward_config_both,     nward_syn_handler     },
+	{ 'T', "con",  NW_FILTER_SYN,  nward_config_both,     nward_connect_handler },
+	{ 'A', "ack",  NW_FILTER_ACK,  nward_config_both,     nward_ack_handler     },
+	{ 'X', "xmas", NW_FILTER_XMAS, nward_config_incoming, nward_echo_handler    },
+	{ 'N', "null", NW_FILTER_NULL, nward_config_incoming, nward_echo_handler    },
+	{ 'F', "fin",  NW_FILTER_FIN,  nward_config_incoming, nward_echo_handler    },
 };
