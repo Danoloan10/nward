@@ -17,6 +17,7 @@ void nward_udp_handler  (u_char *user, const struct pcap_pkthdr *h, const u_char
 		return;
 	}
 
+	// empezar temporizador de lista de sospechosos y de la lista de conexiones
 	if (args.live) {
 		if (!alrm_started) {
 			while (susp_start_live_ticker(&conn, 2*args.usec));
@@ -31,6 +32,9 @@ void nward_udp_handler  (u_char *user, const struct pcap_pkthdr *h, const u_char
 	u_short dst_port = ntohs(udphead.dport);
 
 	if (!susp_tick_both(&conn, iphead.saddr, dst_port, args.maxticks/2)) {
+		// sólo si un paquete UDP se dirige a un puerto al que no
+		// ha enviado ya suficientes paquetes se considerará
+		// tráfico sospechoso
 		if (susp_tick_addr(&susp, iphead.saddr, args.maxticks)) {
 			notify_attack("UDP scan",
 					h->ts,

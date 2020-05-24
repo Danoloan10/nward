@@ -17,6 +17,7 @@ void nward_connect_handler  (u_char *user, const struct pcap_pkthdr *h, const u_
 		return;
 	}
 
+	// empezar temporizador de lista de sospechosos
 	if (args.live) {
 		if (!alrm_started) {
 			while (susp_start_live_ticker(&susp, args.usec));
@@ -38,7 +39,9 @@ ip_ver: 4,
 	};
 	int i, ret = synned_match(&synned, &tcpcon, &i);
 	if (ret == 0) {
+		// si no ha sido registrada la conexión asociada al paquete
 		if (TCPSYN(tcphead.flags)) {
+			// comienza una conexión
 			if (synned_add(&synned, &tcpcon)) {
 				fprintf(stderr, "synned_add(): error\n");
 				return;
@@ -48,6 +51,8 @@ ip_ver: 4,
 		if (TCPRST(tcphead.flags)) {
 			synned_remove(&synned, &tcpcon);
 		} else if(TCPACK(tcphead.flags)) {
+			// será connect si se completa el saludo triple, cuando el
+			// que ha comenzado la conexión envíe un ACK
 			if (susp_tick_addr(&susp, tcpcon.src_addr.ipv4, args.maxticks)) {
 				notify_attack("CONNECT scan, notified port open",
 						h->ts,
@@ -65,6 +70,8 @@ ip_ver: 4,
 		}
 	} else if (ret < 0) {
 		if (TCPRST(tcphead.flags)) {
+			// Un escaneo TCP Connect espera un RST como respuesta
+			// al primer SYN si el puerto está cerrado (igual que TCP SYN)
 			if (susp_tick_addr(&susp, tcpcon.dst_addr.ipv4, args.maxticks)) {
 				notify_attack("CONNECT scan, notified port closed",
 						h->ts,

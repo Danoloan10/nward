@@ -25,9 +25,6 @@ void nward_config_incoming (pcap_t *pcap);
 void nward_config_both (pcap_t *pcap);
 
 void nward_echo_handler (u_char *user, const struct pcap_pkthdr *h, const u_char *bytes);
-
-
-void nward_echo_handler (u_char *user, const struct pcap_pkthdr *h, const u_char *bytes);
 void nward_udp_handler  (u_char *user, const struct pcap_pkthdr *h, const u_char *bytes);
 void nward_ack_handler  (u_char *user, const struct pcap_pkthdr *h, const u_char *bytes);
 void nward_syn_handler  (u_char *user, const struct pcap_pkthdr *h, const u_char *bytes);

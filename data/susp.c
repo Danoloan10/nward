@@ -71,8 +71,8 @@ static void _tick_all (struct susp_list *list) {
 static void *_tick_alrm_hand (void *pargs) {
 	struct args args = *((struct args *)pargs);
 	free(pargs);
+	struct susp_list *list = args.list;
 	while (1) {
-		struct susp_list *list = args.list;
 		_tick_all(list);
 		usleep(args.usec);
 	}
