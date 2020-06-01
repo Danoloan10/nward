@@ -54,8 +54,8 @@ $ make
 $ ./nward
 ```
 ## Dependencies
-- [libpcap](https://www.tcpdump.org/)
-- [goldsborough/vector](https://github.com/goldsborough/vector) (included)
+- [libpcap](https://www.tcpdump.org/) (dynamic library)
+- [goldsborough/vector](https://github.com/goldsborough/vector) (source included)
 # Internals
 Two very important conecpts in the inner workings of **nmap** are *modes* and *suspicious activity*.
 ## Suspicious activity
