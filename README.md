@@ -1,6 +1,7 @@
 # nward
 **nward** is a modular port scan detector. Both live capture and offline PCAP files reading are supported.
-Currently **UDP**, **TCP SYN**, **TCP Connect**, **TCP ACK**, **TCP Xmas**, **TCP NULL** and **TCP FIN** scans are supported,
+Currently **UDP**, **TCP SYN**, **TCP Connect**, **TCP ACK**, **TCP Xmas**, **TCP NULL** and **TCP FIN** scans
+(taking [_nmap_](https://nmap.org/) as a reference) are supported,
 but the code is designed to allow easy implementation of detection of other port scanning techniques.
 It is distributed under the [GPLv3](https://github.com/Danoloan10/nward/blob/master/LICENSE) license.
 # _Index_
