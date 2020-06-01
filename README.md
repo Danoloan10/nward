@@ -6,6 +6,7 @@ It is distributed under the [GPLv3](https://github.com/Danoloan10/nward/blob/mas
 # Index
 - [Usage](#usage)
 - [Bulding](#building)
+	- [Dependencies](#dependencies)
 - [Internals](#internals)
 # Usage
 Following is a copy of the usage instructions printed by a misuse of the program:
