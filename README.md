@@ -9,8 +9,8 @@ It is distributed under the [GPLv3](https://github.com/Danoloan10/nward/blob/mas
 	- [Dependencies](#dependencies)
 - [Internals](#internals)
 	- [Suspicious activity](#suspicious-activity)
-		- [``susp_list``](#susp-list)
-		- [``synned_list``](#synned-list)
+		- [``susp_list``](#susp_list)
+		- [``synned_list``](#synned_list)
 	- [Modes](#modes)
 		- [Adding a mode](#adding-a-mode)
 # Usage
