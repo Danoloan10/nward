@@ -3,6 +3,10 @@
 Currently **UDP**, **TCP SYN**, **TCP Connect**, **TCP ACK**, **TCP Xmas**, **TCP NULL** and **TCP FIN** are supported,
 but the code is designed to allow easy implementation of detection of other port scanning techniques.
 It is distributed under the [GPLv3](https://github.com/Danoloan10/nward/blob/master/LICENSE) license.
+# Index
+- [Usage](#usage)
+- [Bulding](#building)
+- [Internals](#internals)
 # Usage
 Following is a copy of the usage instructions printed by a misuse of the program:
 ```
