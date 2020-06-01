@@ -8,6 +8,11 @@ It is distributed under the [GPLv3](https://github.com/Danoloan10/nward/blob/mas
 - [Bulding](#building)
 	- [Dependencies](#dependencies)
 - [Internals](#internals)
+	- [Suspicious activity](#suspicious-activity)
+		- [``susp_list``](#susp-list)
+		- [``synned_list``](#synned-list)
+	- [Modes](#modes)
+		- [Adding a mode](#adding-a-mode)
 # Usage
 Following is a copy of the usage instructions printed by a misuse of the program:
 ```
